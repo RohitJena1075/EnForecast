@@ -10,7 +10,9 @@ scikit-learn==1.5.1
 xgboost==2.1.1
 
 # Database
-psycopg2-binary==2.9.9
+SQLAlchemy==2.0.36
+asyncpg==0.30.0
+
 
 # Config and environment
 python-dotenv==1.0.1
