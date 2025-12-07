@@ -28,7 +28,7 @@ EnForecast is an interactive web app for exploring how countries generate electr
 
 ## Project structure
 
-.
+
 ├── api/ # FastAPI service and model serving code
 │ ├── main.py # HTTP endpoints, DB access, CORS
 │ ├── model_service.py# Feature engineering + forecasting logic
@@ -39,7 +39,6 @@ EnForecast is an interactive web app for exploring how countries generate electr
 │ └── public/ # Static assets, index.html, manifest, icons
 └── train_datasets.py # Offline training script for ML models
 
-text
 
 ## Getting started (local)
 
