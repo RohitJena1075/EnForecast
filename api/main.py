@@ -21,17 +21,15 @@ app = FastAPI(title="Energy Forecast API")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
-# Async DB engine for Railway Postgres
-# Guard against missing DATABASE_URL
+# Async DB engine for Railway Postgres using asyncpg
 if not DATABASE_URL:
-    # app still starts, but DB routes will fail with 500
     ASYNC_DATABASE_URL = None
     engine = None
     AsyncSessionLocal = None
 else:
-    ASYNC_DATABASE_URL = DATABASE_URL.replace(
-        "postgres://", "postgresql+asyncpg://"
-    )
+    # Force asyncpg dialect
+    url = DATABASE_URL.replace("postgres://", "postgresql://")
+    ASYNC_DATABASE_URL = url.replace("postgresql://", "postgresql+asyncpg://")
     engine = create_async_engine(ASYNC_DATABASE_URL, future=True)
     AsyncSessionLocal = sessionmaker(
         engine, expire_on_commit=False, class_=AsyncSession
