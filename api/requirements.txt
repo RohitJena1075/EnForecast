@@ -1,0 +1,21 @@
+# ASGI server and API
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Data and ML stack
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+xgboost==2.1.1
+
+# Database
+psycopg2-binary==2.9.9
+
+# Config and environment
+python-dotenv==1.0.1
+
+# Optional: plotting / debugging (not required for API)
+matplotlib==3.9.0
+
+# For CORS support (FastAPI uses this)
+starlette==0.38.2
