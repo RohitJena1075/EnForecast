@@ -12,7 +12,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # /app
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 _CFG = None
-_SCALER = None
 _LC_MODEL = None
 _GEN_MODEL = None
 _FEATURE_COLS = None
@@ -20,24 +19,21 @@ _FEATURE_COLS = None
 
 def _load_models():
     """
-    Lazy-load config, scaler and models.
-    Raises RuntimeError with a short message if the stack cannot be loaded
-    (e.g. missing libgomp / compiled sklearn on Railway).
+    Lazy-load config and models.
+
+    The StandardScaler is not loaded as a pickled object to avoid
+    binary dependencies (libgomp) on Railway; instead, its mean and
+    scale are stored in feature_config.json and applied manually.
     """
-    global _CFG, _SCALER, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
+    global _CFG, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
     if _CFG is not None:
-        return _CFG, _SCALER, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
+        return _CFG, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
 
     try:
         cfg_path = os.path.join(MODELS_DIR, "feature_config.json")
-        scaler_path = os.path.join(MODELS_DIR, "scaler.joblib")
-
-        logger.info("Loading model config from %s", cfg_path)
+        logger.info("Loading feature config from %s", cfg_path)
         with open(cfg_path, "r") as f:
             _CFG = json.load(f)
-
-        logger.info("Loading scaler from %s", scaler_path)
-        _SCALER = joblib.load(scaler_path)
 
         lc_path = os.path.join(
             MODELS_DIR, f"{_CFG['best_lc_model_type']}_lc_model.joblib"
@@ -62,10 +58,10 @@ def _load_models():
         logger.exception("Failed to load models from %s", MODELS_DIR)
         raise RuntimeError(
             "Model stack could not be loaded on this environment "
-            "(likely missing libgomp or compiled sklearn)."
+            "(likely missing or incompatible artifacts)."
         ) from e
 
-    return _CFG, _SCALER, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
+    return _CFG, _LC_MODEL, _GEN_MODEL, _FEATURE_COLS
 
 
 def _add_shares_and_lags(df: pd.DataFrame) -> pd.DataFrame:
@@ -116,7 +112,11 @@ def predict_horizon_from_df(
     for horizon future years (1–10) after the last actual year,
     given a history dataframe from the database.
     """
-    CFG, SCALER, LC_MODEL, GEN_MODEL, FEATURE_COLS = _load_models()
+    CFG, LC_MODEL, GEN_MODEL, FEATURE_COLS = _load_models()
+
+    # manual StandardScaler stats (same as scaler.mean_ and scaler.scale_)
+    means = np.array(CFG["scaler_mean"], dtype=float)
+    scales = np.array(CFG["scaler_scale"], dtype=float)
 
     iso3 = iso3.upper()
     if hist_raw.empty:
@@ -136,9 +136,12 @@ def predict_horizon_from_df(
     results = []
 
     for step in range(1, horizon + 1):
+        # build feature row and apply same scaling as during training
         row = hist.iloc[-1].reindex(FEATURE_COLS).fillna(0.0)
         X = row.values.reshape(1, -1)
-        X_scaled = SCALER.transform(X)
+
+        # Standardization: (X - mean) / scale
+        X_scaled = (X - means) / scales
 
         delta_lc = float(LC_MODEL.predict(X_scaled)[0])
         delta_log_gen = float(GEN_MODEL.predict(X)[0])
@@ -158,6 +161,7 @@ def predict_horizon_from_df(
             }
         )
 
+        # roll the system forward one year for next iteration
         new_row = hist.iloc[-1].copy()
         new_row["year"] = target_year
         new_row["low_carbon_share_pct"] = lc_level
