@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { API_BASE } from "../config";
 
 interface Country {
   code: string;
@@ -54,7 +55,7 @@ const OverviewPage: React.FC<Props> = ({
 
   const fetchCountries = useCallback(async () => {
     try {
-      const res = await axios.get<Country[]>("http://localhost:8000/countries");
+      const res = await axios.get<Country[]>(`${API_BASE}/countries`);
       setCountries(res.data);
     } catch (e) {
       console.error("countries failed", e);
@@ -65,7 +66,7 @@ const OverviewPage: React.FC<Props> = ({
     setLoading(true);
     try {
       const res = await axios.get<ForecastResponse>(
-        `http://localhost:8000/forecast/${iso3}?horizon=10`
+        `${API_BASE}/forecast/${iso3}?horizon=10`
       );
       setForecast(res.data);
     } catch (e) {
@@ -182,9 +183,7 @@ const OverviewPage: React.FC<Props> = ({
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 if (!filtered.length) return;
-                setActiveIndex((p) =>
-                  p === 0 ? filtered.length - 1 : p - 1
-                );
+                setActiveIndex((p) => (p === 0 ? filtered.length - 1 : p - 1));
               } else if (e.key === "Enter") {
                 e.preventDefault();
                 trigger();

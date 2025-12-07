@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { View } from "../App";
+import { API_BASE } from "../config";
 
 interface Props {
   setView: (v: View) => void;
@@ -27,7 +28,7 @@ const HomePage: React.FC<Props> = ({
 
   useEffect(() => {
     axios
-      .get<Country[]>("http://localhost:8000/countries")
+      .get<Country[]>(`${API_BASE}/countries`)
       .then((res) => setCountries(res.data))
       .catch(() => setCountries([]));
   }, []);

@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { API_BASE } from "../config";
 
 interface Country {
   code: string;
@@ -54,7 +55,7 @@ const ComparePage: React.FC<Props> = ({ goHome }) => {
 
   const fetchCountries = useCallback(async () => {
     try {
-      const res = await axios.get<Country[]>("http://localhost:8000/countries");
+      const res = await axios.get<Country[]>(`${API_BASE}/countries`);
       setCountries(res.data);
     } catch (e) {
       console.error("countries failed", e);
@@ -69,7 +70,7 @@ const ComparePage: React.FC<Props> = ({ goHome }) => {
       setLoading(true);
       try {
         const res = await axios.get<ForecastResponse>(
-          `http://localhost:8000/forecast/${iso3}?horizon=10`
+          `${API_BASE}/forecast/${iso3}?horizon=10`
         );
         setter(res.data);
       } catch (e) {
