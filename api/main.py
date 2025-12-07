@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI, HTTPException, Query
+import model_service
 from fastapi.middleware.cors import CORSMiddleware
-from api import model_service
 import psycopg2
 import os
 import json
